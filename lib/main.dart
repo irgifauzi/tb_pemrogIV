@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'view/screen/home_page.dart';
-
+import 'package:dio_contact/view/screen/landing_page.dart';
+import 'package:dio_contact/view/screen/home_page.dart';  
 void main() {
   runApp(const MyApp());
 }
@@ -8,16 +8,19 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Ramen Store',
       theme: ThemeData(
         primarySwatch: Colors.indigo,
         useMaterial3: false,
       ),
-      home: const HomePage(),
+      
+      routes: {
+        '/': (context) => const LandingPage(),   
+        '/home_page': (context) => const MenuPage(),  
+      },
     );
   }
 }

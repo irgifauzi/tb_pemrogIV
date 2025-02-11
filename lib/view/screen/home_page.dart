@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:dio_contact/model/menu_model.dart';
 import 'package:dio_contact/service/api_service.dart';
+import 'package:dio_contact/model/menu_model.dart';
 import 'package:intl/intl.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class MenuPage extends StatefulWidget {
+  const MenuPage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<MenuPage> createState() => _MenuPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _MenuPageState extends State<MenuPage> {
   final ApiServices _dataService = ApiServices();
-  List<Menu> _menuMdl = [];
+  List<Menu> _menuList = [];
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -31,13 +31,12 @@ class _HomePageState extends State<HomePage> {
     try {
       final menuList = await _dataService.fetchMenuItems();
       if (!mounted) return;
-
       setState(() {
         _isLoading = false;
         if (menuList != null) {
-          _menuMdl = menuList;
+          _menuList = menuList;
         } else {
-          _errorMessage = 'Gagal memuat data menu. Silakan coba lagi.';
+          _errorMessage = 'Gagal memuat menu. Coba lagi nanti.';
         }
       });
     } catch (e) {
@@ -52,49 +51,73 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Menu List')),
-      body: RefreshIndicator(
-        onRefresh: refreshMenuList,
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _errorMessage.isNotEmpty
-                ? Center(child: Text(_errorMessage))
-                : ListView.separated(
-                    itemBuilder: (context, index) {
-                      final menu = _menuMdl[index];
-                      return Card(
-                        child: ListTile(
-                          leading: menu.gambar.isNotEmpty
-                              ? Image.network(
-                                  menu.gambar,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.broken_image);
-                                  },
-                                )
-                              : const Icon(Icons.fastfood),
-                          title: Text(menu.namaMenu),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(menu.deskripsi),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp').format(menu.harga)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
+      appBar: AppBar(
+        title: const Text('Menu Restoran Jepang'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: refreshMenuList,
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+              ? Center(child: Text(_errorMessage))
+              : ListView.builder(
+                  itemCount: _menuList.length,
+                  itemBuilder: (context, index) {
+                    final menu = _menuList[index];
+                    return Card(
+                      child: ListTile(
+                        leading: menu.gambar.isNotEmpty
+                            ? Image.network(
+                                menu.gambar,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(Icons.broken_image);
+                                },
+                              )
+                            : const Icon(Icons.fastfood),
+                        title: Text(menu.namaMenu),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(menu.deskripsi),
+                            Text(
+                              'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp').format(menu.harga)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                    separatorBuilder: (context, index) => const Divider(),
-                    itemCount: _menuMdl.length,
-                  ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () {
+                                // Tambahkan fungsi edit menu
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () {
+                                // Tambahkan fungsi delete menu
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Tambahkan fungsi untuk menambahkan menu baru
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
