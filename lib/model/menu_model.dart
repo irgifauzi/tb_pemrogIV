@@ -1,5 +1,5 @@
 class Menu {
-  final String id; // Tetap ada, tapi tidak required
+  final String id;
   final String namaMenu;
   final int harga;
   final String deskripsi;
@@ -7,7 +7,7 @@ class Menu {
   final String kategori;
 
   Menu({
-    this.id = '', // Nilai default untuk id
+    this.id = '', // Default kosong untuk id
     required this.namaMenu,
     required this.harga,
     required this.deskripsi,
@@ -18,7 +18,7 @@ class Menu {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'namaMenu': namaMenu,
+      'nama_menu': namaMenu, // Pastikan snake_case jika mengikuti API
       'harga': harga,
       'deskripsi': deskripsi,
       'gambar': gambar,
@@ -28,12 +28,12 @@ class Menu {
 
   factory Menu.fromJson(Map<String, dynamic> json) {
     return Menu(
-      id: json['id'],
-      namaMenu: json['nama_menu'],
-      harga: json['harga'],
-      deskripsi: json['deskripsi'],
-      gambar: json['gambar'],
-      kategori: json['kategori'],
+      id: json['id'] ?? '', // Pastikan tidak null
+      namaMenu: json['nama_menu'] ?? '',
+      harga: json['harga'] ?? 0,
+      deskripsi: json['deskripsi'] ?? '',
+      gambar: json['gambar'] ?? '',
+      kategori: json['kategori'] ?? '',
     );
   }
 }
