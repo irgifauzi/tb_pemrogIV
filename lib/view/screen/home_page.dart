@@ -1,7 +1,10 @@
+import 'package:dio_contact/service/auth_manager.dart';
+import 'package:dio_contact/view/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:dio_contact/service/api_service.dart';
 import 'package:dio_contact/model/menu_model.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -22,10 +25,28 @@ class _MenuPageState extends State<MenuPage> {
   final _gambarCtl = TextEditingController();
   final _kategoriCtl = TextEditingController();
 
+  late SharedPreferences logindata;
+  String username = '';
+
+  late SharedPreferences tokenData;
+  String token = '';
+
   @override
   void initState() {
     super.initState();
+    inital();
     refreshMenuList();
+  }
+
+  void inital() async {
+    logindata = await SharedPreferences.getInstance();
+    tokenData = await SharedPreferences.getInstance();
+    String? savedToken = tokenData.getString('token');
+
+    setState(() {
+      username = logindata.getString('username') ?? 'Guest';
+      token = savedToken ?? 'Token tidak ditemukan';
+    });
   }
 
   Future<void> refreshMenuList() async {
@@ -87,8 +108,10 @@ class _MenuPageState extends State<MenuPage> {
         title: const Text('Menu Restoran Jepang'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: refreshMenuList,
+            onPressed: () {
+              _showLogoutConfirmationDialog(context);
+            },
+            icon: const Icon(Icons.logout),
           ),
         ],
       ),
@@ -99,6 +122,46 @@ class _MenuPageState extends State<MenuPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Card(
+                elevation: 4,
+                margin: const EdgeInsets.symmetric(vertical: 2.0),
+                color: Colors.tealAccent,
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.account_circle_rounded),
+                          const SizedBox(width: 8.0),
+                          Text(
+                            'Login sebagai: $username',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5.0),
+                      Row(
+                        children: [
+                          const Icon(Icons.key_rounded),
+                          const SizedBox(width: 8.0),
+                          Text(
+                            'Token: ${token.length > 20 ? token.substring(0, 20) + '...' : token}',
+                            style: const TextStyle(
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               TextFormField(
                 controller: _namamenuCtl,
                 decoration: const InputDecoration(
@@ -249,4 +312,38 @@ class _MenuPageState extends State<MenuPage> {
       ),
     );
   }
+}
+
+void _showLogoutConfirmationDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: const Text('Konfirmasi Logout'),
+        content: const Text('Anda yakin ingin logout?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Tidak'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await AuthManager.logout();
+              Navigator.pushAndRemoveUntil(
+                // ignore: use_build_context_synchronously
+                dialogContext,
+                MaterialPageRoute(
+                  builder: (context) => const LoginPage(),
+                ),
+                (Route<dynamic> route) => false,
+              );
+            },
+            child: const Text('Ya'),
+          ),
+        ],
+      );
+    },
+  );
 }

@@ -3,6 +3,7 @@ import 'package:dio_contact/service/api_service.dart';
 import 'package:dio_contact/service/auth_manager.dart';
 import 'package:dio_contact/view/screen/home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
 
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _tokenController = TextEditingController();
 
   final ApiServices _dataService = ApiServices();
 
@@ -43,6 +45,7 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _tokenController.dispose();
     super.dispose();
   }
 
@@ -133,12 +136,20 @@ class _LoginPageState extends State<LoginPage> {
                             debugPrint('Login Response: ${res?.toJson()}');
 
                             if (res != null && res.statusCode == 200) {
+                              // Simpan token ke SharedPreferences
+                              SharedPreferences prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.setString('token',
+                                  res.token ?? 'Token tidak ditemukan');
+
+                              // Simpan username (opsional, jika diperlukan)
                               await AuthManager.login(_usernameController.text);
+
+                              // Navigasi ke MenuPage
                               Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const MenuPage(),
-                                ),
+                                    builder: (context) => const MenuPage()),
                                 (route) => false,
                               );
                             } else {
