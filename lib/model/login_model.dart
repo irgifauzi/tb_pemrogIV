@@ -1,4 +1,3 @@
-// DIGUNAKAN UNTUK RESPONSE
 class LoginResponse {
   final String? token;
   final String? message;
@@ -15,7 +14,8 @@ class LoginResponse {
     return LoginResponse(
       token: json["token"] as String?,
       message: json["status"] as String?,
-      statusCode: json["status"] == "Login successful" ? 200 : 403,
+      statusCode:
+          json.containsKey("statusCode") ? json["statusCode"] as int : 200,
     );
   }
 

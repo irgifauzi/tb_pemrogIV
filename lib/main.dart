@@ -1,7 +1,7 @@
 import 'package:dio_contact/view/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:dio_contact/view/screen/landing_page.dart';
-import 'package:dio_contact/view/screen/home_page.dart';  
+import 'package:dio_contact/view/screen/home_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,10 +18,9 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.indigo,
         useMaterial3: false,
       ),
-      
       routes: {
-        '/': (context) => const LandingPage(),   
-        '/home_page': (context) => const LoginPage(),  
+        '/': (context) => const LandingPage(),
+        '/home_page': (context) => const LoginPage(),
       },
     );
   }

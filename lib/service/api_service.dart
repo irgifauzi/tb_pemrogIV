@@ -5,39 +5,35 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 
 class ApiServices {
-  // Base URL untuk API
-  final String _baseUrl =
-      'https://asia-southeast2-menurestoran-443909.cloudfunctions.net/menurestoran';
-
   final Dio dio = Dio(BaseOptions(
     validateStatus: (status) {
       return status! < 500; // Izinkan status code di bawah 500
     },
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      // HAPUS Origin dan x-requested-with
-    },
   ));
 
-  // ==============================
-  // Fungsi untuk GET Menu Items
-  // ==============================
+  final String _baseUrl =
+      'https://asia-southeast2-menurestoran-443909.cloudfunctions.net/menurestoran';
+
   Future<List<Menu>> fetchMenuItems() async {
     try {
       final String fullUrl = '$_baseUrl/data/ramen';
-      debugPrint('Request URL: $fullUrl');
-
       final response = await dio.get(fullUrl);
 
-      debugPrint('Response Status Code: ${response.statusCode}');
-      debugPrint('Response Data: ${response.data}');
+      if (response.statusCode == 200 || response.statusCode == 403) {
+        print(
+            'Response success (status ${response.statusCode}): Data berhasil diambil.');
+        print('Response body: ${response.data}');
 
-      if (response.statusCode == 200) {
+        // Bersihkan respons dari pesan "Forbidden"
+        String responseBody = response.data;
+        if (responseBody.startsWith('Forbidden')) {
+          responseBody = responseBody.replaceFirst('Forbidden', '').trim();
+        }
+
         // Pastikan responseBody adalah JSON yang valid
         dynamic responseData;
         try {
-          responseData = response.data;
+          responseData = jsonDecode(responseBody);
         } catch (e) {
           throw Exception('Gagal mengurai JSON: $e');
         }
@@ -54,7 +50,7 @@ class ApiServices {
             'Gagal mengambil data. Status Code: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error: $e');
+      print('Error: $e');
       throw Exception('Terjadi kesalahan saat mengambil data');
     }
   }
@@ -99,46 +95,73 @@ class ApiServices {
   // ==============================
   // Fungsi untuk LOGIN
   // ==============================
-  Future<LoginResponse?> login(Map<String, dynamic> loginData) async {
-    try {
-      final String fullUrl = '$_baseUrl/admin/login';
-      debugPrint('Request URL: $fullUrl');
-      debugPrint('Request Data: ${jsonEncode(loginData)}');
+Future<LoginResponse?> login(Map<String, dynamic> loginData) async {
+  try {
+    final String fullUrl = '$_baseUrl/admin/login';
+    debugPrint('Request URL: $fullUrl');
+    debugPrint('Request Data: ${jsonEncode(loginData)}');
 
-      final response = await dio.post(
-        fullUrl,
-        data: jsonEncode(loginData),
-      );
+    final response = await dio.post(
+      fullUrl,
+      data: jsonEncode(loginData),
+    );
 
-      debugPrint('Response Status Code: ${response.statusCode}');
-      debugPrint('Response Data: ${response.data}');
+    debugPrint('Response Status Code: ${response.statusCode}');
+    debugPrint('Response Data: ${response.data}');
 
-      // Cek apakah respons adalah JSON atau HTML
-      if (response.data is String) {
-        debugPrint('Response is String (likely HTML)');
-        displaySnackbar('CORS error atau respons tidak valid dari server.');
-        return null;
+    // Tambahkan pengecekan status code (200 atau 403)
+    if (response.statusCode == 200 || response.statusCode == 403) {
+      print(
+          'Response success (status ${response.statusCode}): Data berhasil diambil.');
+      print('Response body: ${response.data}');
+
+      // Bersihkan respons dari pesan "Forbidden"
+      String responseBody = response.data;
+      if (responseBody.startsWith('Forbidden')) {
+        responseBody = responseBody.replaceFirst('Forbidden', '').trim();
       }
 
-      if (response.statusCode == 200) {
-        final loginResponse = LoginResponse.fromJson(response.data);
-        return loginResponse;
-      } else {
-        displaySnackbar('Login gagal. Status Code: ${response.statusCode}');
+      // Coba mengurai data JSON terlepas dari status code atau tipe respons
+      try {
+        // Pastikan responseBody adalah JSON yang valid
+        dynamic responseData;
+        if (responseBody is String) {
+          responseData = jsonDecode(responseBody);
+        } else {
+          responseData = responseBody;
+        }
+
+        // Buat objek LoginResponse dari data yang diurai
+        final loginResponse = LoginResponse.fromJson(responseData);
+
+        // Jika status login adalah "Login successful", lanjutkan
+        if (loginResponse.message == "Login successful") {
+          return loginResponse;
+        } else {
+          displaySnackbar('Login gagal: ${loginResponse.message}');
+          return null;
+        }
+      } catch (e) {
+        debugPrint('Error parsing JSON: $e');
+        displaySnackbar('Terjadi kesalahan saat mengurai respons dari server.');
         return null;
       }
-    } on DioException catch (e) {
-      debugPrint('DioException - Error: ${e.message}');
-      displaySnackbar('Terjadi kesalahan saat menghubungi server.');
-      return null;
-    } catch (e, stacktrace) {
-      debugPrint('Catch Error: $e');
-      debugPrint('Stack Trace: $stacktrace');
-      throw Exception('Terjadi kesalahan saat login');
+    } else {
+      // Jika status code bukan 200 atau 403, lempar exception
+      throw Exception('Gagal melakukan login. Status Code: ${response.statusCode}');
     }
+  } on DioException catch (e) {
+    debugPrint('DioException - Error: ${e.message}');
+    displaySnackbar('Terjadi kesalahan saat menghubungi server.');
+    return null;
+  } catch (e, stacktrace) {
+    debugPrint('Catch Error: $e');
+    debugPrint('Stack Trace: $stacktrace');
+    throw Exception('Terjadi kesalahan saat login');
   }
+}
 
-  // Fungsi untuk menampilkan SnackBar
+// Fungsi untuk menampilkan SnackBar
   void displaySnackbar(String message) {
     debugPrint('Snackbar: $message');
     // Implementasikan SnackBar di UI (optional)
