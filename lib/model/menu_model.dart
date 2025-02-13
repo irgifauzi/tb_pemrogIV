@@ -1,7 +1,7 @@
 class Menu {
   final String id;
-  final String namaMenu;
-  final int harga;
+ final String namaMenu;
+  final int harga; // Ubah dari String ke int
   final String deskripsi;
   final String gambar;
   final String kategori;
@@ -36,4 +36,45 @@ class Menu {
       kategori: json['kategori'] ?? '',
     );
   }
+}
+
+//DIGUNAKAN UNTUK FORM INPUT
+class MenuInput {
+  final String namamenu;
+  final int harga;
+  final String deskripsi;
+  final String gambar;
+  final String kategori;
+
+  MenuInput({
+    required this.namamenu,
+    required this.harga,
+    required this.deskripsi,
+    required this.gambar,
+    required this.kategori,
+  });
+
+  Map<String, dynamic> toJson() => {
+        "nama_menu": namamenu,
+        "harga": harga,
+        "deskripsi": deskripsi,
+        "gambar": gambar,
+        "kategori": kategori,
+      };
+}
+
+//DIGUNAKAN UNTUK RESPONSE
+class MenuResponse {
+  final String? insertedId;
+  final String message;
+
+  MenuResponse({
+    this.insertedId,
+    required this.message,
+  });
+
+  factory MenuResponse.fromJson(Map<String, dynamic> json) => MenuResponse(
+        insertedId: json["inserted_id"],
+        message: json["message"],
+      );
 }

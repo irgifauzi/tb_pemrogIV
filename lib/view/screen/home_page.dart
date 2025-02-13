@@ -1,10 +1,12 @@
 import 'package:dio_contact/service/auth_manager.dart';
 import 'package:dio_contact/view/login_page.dart';
+import 'package:dio_contact/view/screen/widget/menu_card.dart';
 import 'package:flutter/material.dart';
 import 'package:dio_contact/service/api_service.dart';
 import 'package:dio_contact/model/menu_model.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio_contact/view/screen/widget/menu_card.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -24,6 +26,7 @@ class _MenuPageState extends State<MenuPage> {
   final _deskripsiCtl = TextEditingController();
   final _gambarCtl = TextEditingController();
   final _kategoriCtl = TextEditingController();
+  MenuResponse? ctRes;
   bool isEditing = false;
   String idMenu = '';
 
@@ -75,26 +78,35 @@ class _MenuPageState extends State<MenuPage> {
 
   Future<void> _postMenu() async {
     if (_formKey.currentState!.validate()) {
-      final newMenu = Menu(
-        namaMenu: _namamenuCtl.text,
-        harga: int.parse(_hargaCtl.text),
+      final newMenu = MenuInput(
+        namamenu: _namamenuCtl.text,
+        harga: int.parse(_hargaCtl.text), // Konversi ke int
         deskripsi: _deskripsiCtl.text,
         gambar: _gambarCtl.text,
         kategori: _kategoriCtl.text,
       );
 
       try {
-        await _dataService.postMenu(newMenu); // Panggil fungsi postMenu
-        refreshMenuList(); // Refresh daftar menu setelah berhasil menambahkan
+        final response = await _dataService.postMenu(newMenu);
+        setState(() {
+          ctRes = response;
+        });
+        refreshMenuList();
         _namamenuCtl.clear();
         _hargaCtl.clear();
         _deskripsiCtl.clear();
         _gambarCtl.clear();
         _kategoriCtl.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Menu berhasil ditambahkan!')),
+        );
       } catch (e) {
         setState(() {
           _errorMessage = 'Gagal menambahkan menu: $e';
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menambahkan menu: $e')),
+        );
       }
     }
   }
@@ -139,6 +151,58 @@ class _MenuPageState extends State<MenuPage> {
         });
       }
     }
+  }
+
+  Widget hasilCard(BuildContext context) {
+    return Column(
+      children: [
+        if (ctRes != null)
+          MenuCard(
+            ctRes: ctRes!,
+          )
+        else
+          const SizedBox.shrink(), // Jika ctRes null, tampilkan widget kosong
+      ],
+    );
+  }
+
+  void _showDeleteConfirmationDialog(String id, String nama) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Hapus'),
+          content: Text('Apakah Anda yakin ingin menghapus data $nama?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('CANCEL'),
+            ),
+            TextButton(
+              onPressed: () async {
+                bool isDeleted = await _dataService.deleteMenu(id);
+                if (isDeleted) {
+                  // Jika berhasil dihapus, refresh daftar menu
+                  await refreshMenuList();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Menu berhasil dihapus!')),
+                  );
+                } else {
+                  // Jika gagal, tampilkan pesan error
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Gagal menghapus menu!')),
+                  );
+                }
+                Navigator.of(context).pop();
+              },
+              child: const Text('DELETE'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -303,6 +367,8 @@ class _MenuPageState extends State<MenuPage> {
                         },
                         child: const Text('Cancel Update'),
                       ),
+                    // Tambahkan hasilCard di sini
+                    hasilCard(context),
                   ],
                 ),
               ),
@@ -339,7 +405,8 @@ class _MenuPageState extends State<MenuPage> {
                                     Text(
                                       'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp').format(menu.harga)}',
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -370,7 +437,9 @@ class _MenuPageState extends State<MenuPage> {
                                     IconButton(
                                       icon: const Icon(Icons.delete),
                                       onPressed: () {
-                                        // Tambahkan fungsi delete menu
+                                        _showDeleteConfirmationDialog(
+                                            _menuList[index].id,
+                                            _menuList[index].namaMenu);
                                       },
                                     ),
                                   ],
@@ -382,12 +451,6 @@ class _MenuPageState extends State<MenuPage> {
             ],
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Tambahkan fungsi untuk menambahkan menu baru
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }
