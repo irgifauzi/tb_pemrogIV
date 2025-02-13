@@ -170,47 +170,92 @@ class ApiServices {
   }
 
   Future<Menu?> getMenuById(String id) async {
-  try {
-    final response = await dio.get(
-      '$_baseUrl/menu/byid',
-      queryParameters: {'id': id},
-    );
+    try {
+      final response = await dio.get(
+        '$_baseUrl/menu/byid',
+        queryParameters: {'id': id},
+      );
 
-    // Cek status code
-    if (response.statusCode == 200 || response.statusCode == 403) {
-      // Bersihkan respons dari pesan "Forbidden"
-      String responseBody = response.data.toString();
-      if (responseBody.startsWith('Forbidden')) {
-        responseBody = responseBody.replaceFirst('Forbidden', '').trim();
-      }
+      // Cek status code
+      if (response.statusCode == 200 || response.statusCode == 403) {
+        // Bersihkan respons dari pesan "Forbidden"
+        String responseBody = response.data.toString();
+        if (responseBody.startsWith('Forbidden')) {
+          responseBody = responseBody.replaceFirst('Forbidden', '').trim();
+        }
 
-      // Pastikan responseBody adalah JSON yang valid
-      dynamic responseData;
-      try {
-        responseData = jsonDecode(responseBody);
-      } catch (e) {
-        throw Exception('Gagal mengurai JSON: $e');
-      }
+        // Pastikan responseBody adalah JSON yang valid
+        dynamic responseData;
+        try {
+          responseData = jsonDecode(responseBody);
+        } catch (e) {
+          throw Exception('Gagal mengurai JSON: $e');
+        }
 
-      // Debug: Cetak respons untuk memastikan data diterima dengan benar
-      debugPrint('Response Data: $responseData');
+        // Debug: Cetak respons untuk memastikan data diterima dengan benar
+        debugPrint('Response Data: $responseData');
 
-      // Akses properti "data" di JSON
-      if (responseData != null &&
-          responseData is Map<String, dynamic> &&
-          responseData.containsKey('data')) {
-        final menuData = responseData['data'];
-        return Menu.fromJson(menuData);
+        // Akses properti "data" di JSON
+        if (responseData != null &&
+            responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
+          final menuData = responseData['data'];
+          return Menu.fromJson(menuData);
+        } else {
+          throw Exception('Data tidak valid atau kosong.');
+        }
       } else {
-        throw Exception('Data tidak valid atau kosong.');
+        throw Exception(
+            'Gagal mengambil data menu. Status Code: ${response.statusCode}');
       }
-    } else {
-      throw Exception(
-          'Gagal mengambil data menu. Status Code: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Error: $e');
+      return null;
     }
-  } catch (e) {
-    debugPrint('Error: $e');
-    return null;
   }
-}
+
+  Future<bool> updateMenuById(String id, Map<String, dynamic> menuData) async {
+    try {
+      // Susun URL dengan ID di path
+      final url = '$_baseUrl/ubah/byid/$id';
+
+      final response = await dio.put(
+        url,
+        data: menuData,
+      );
+
+      // Cek status code
+      if (response.statusCode == 200 || response.statusCode == 403) {
+        // Bersihkan respons dari pesan "Forbidden"
+        String responseBody = response.data.toString();
+        if (responseBody.startsWith('Forbidden')) {
+          responseBody = responseBody.replaceFirst('Forbidden', '').trim();
+        }
+
+        // Pastikan responseBody adalah JSON yang valid
+        dynamic responseData;
+        try {
+          responseData = jsonDecode(responseBody);
+        } catch (e) {
+          throw Exception('Gagal mengurai JSON: $e');
+        }
+
+        // Debug: Cetak respons untuk memastikan data diterima dengan benar
+        debugPrint('Response Data: $responseData');
+
+        // Cek apakah respons berhasil
+        if (responseData != null && responseData is Map<String, dynamic>) {
+          return true;
+        } else {
+          throw Exception('Gagal mengupdate menu. Data tidak valid.');
+        }
+      } else {
+        throw Exception(
+            'Gagal mengupdate menu. Status Code: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error: $e');
+      return false;
+    }
+  }
 }

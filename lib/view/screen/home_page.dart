@@ -99,6 +99,48 @@ class _MenuPageState extends State<MenuPage> {
     }
   }
 
+  Future<void> _updateMenu() async {
+    if (_formKey.currentState!.validate()) {
+      final updatedMenu = {
+        "nama_menu": _namamenuCtl.text,
+        "harga": int.parse(_hargaCtl.text),
+        "deskripsi": _deskripsiCtl.text,
+        "gambar": _gambarCtl.text,
+        "kategori": _kategoriCtl.text,
+      };
+
+      try {
+        // Panggil updateMenuById dari ApiServices
+        bool isSuccess = await _dataService.updateMenuById(idMenu, updatedMenu);
+
+        if (isSuccess) {
+          // Berhasil update, refresh list dan reset form
+          refreshMenuList();
+          _namamenuCtl.clear();
+          _hargaCtl.clear();
+          _deskripsiCtl.clear();
+          _gambarCtl.clear();
+          _kategoriCtl.clear();
+          setState(() {
+            isEditing = false;
+            idMenu = '';
+          });
+
+          // Notifikasi berhasil
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Menu berhasil diupdate!')),
+          );
+        } else {
+          throw Exception('Update gagal, coba lagi.');
+        }
+      } catch (e) {
+        setState(() {
+          _errorMessage = 'Gagal mengupdate menu: $e';
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -238,8 +280,9 @@ class _MenuPageState extends State<MenuPage> {
                 child: Column(
                   children: [
                     ElevatedButton(
-                      onPressed: _postMenu,
-                      child: Text(isEditing ? 'Update Menu' : 'Post Menu Makanan'),
+                      onPressed: isEditing ? _updateMenu : _postMenu,
+                      child:
+                          Text(isEditing ? 'Update Menu' : 'Post Menu Makanan'),
                     ),
                     if (isEditing) // Tampilkan tombol "Cancel Update" hanya jika sedang dalam mode edit
                       ElevatedButton(
