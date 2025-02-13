@@ -95,75 +95,122 @@ class ApiServices {
   // ==============================
   // Fungsi untuk LOGIN
   // ==============================
-Future<LoginResponse?> login(Map<String, dynamic> loginData) async {
-  try {
-    final String fullUrl = '$_baseUrl/admin/login';
-    debugPrint('Request URL: $fullUrl');
-    debugPrint('Request Data: ${jsonEncode(loginData)}');
+  Future<LoginResponse?> login(Map<String, dynamic> loginData) async {
+    try {
+      final String fullUrl = '$_baseUrl/admin/login';
+      debugPrint('Request URL: $fullUrl');
+      debugPrint('Request Data: ${jsonEncode(loginData)}');
 
-    final response = await dio.post(
-      fullUrl,
-      data: jsonEncode(loginData),
-    );
+      final response = await dio.post(
+        fullUrl,
+        data: jsonEncode(loginData),
+      );
 
-    debugPrint('Response Status Code: ${response.statusCode}');
-    debugPrint('Response Data: ${response.data}');
+      debugPrint('Response Status Code: ${response.statusCode}');
+      debugPrint('Response Data: ${response.data}');
 
-    // Tambahkan pengecekan status code (200 atau 403)
-    if (response.statusCode == 200 || response.statusCode == 403) {
-      print(
-          'Response success (status ${response.statusCode}): Data berhasil diambil.');
-      print('Response body: ${response.data}');
+      // Tambahkan pengecekan status code (200 atau 403)
+      if (response.statusCode == 200 || response.statusCode == 403) {
+        print(
+            'Response success (status ${response.statusCode}): Data berhasil diambil.');
+        print('Response body: ${response.data}');
 
-      // Bersihkan respons dari pesan "Forbidden"
-      String responseBody = response.data;
-      if (responseBody.startsWith('Forbidden')) {
-        responseBody = responseBody.replaceFirst('Forbidden', '').trim();
-      }
-
-      // Coba mengurai data JSON terlepas dari status code atau tipe respons
-      try {
-        // Pastikan responseBody adalah JSON yang valid
-        dynamic responseData;
-        if (responseBody is String) {
-          responseData = jsonDecode(responseBody);
-        } else {
-          responseData = responseBody;
+        // Bersihkan respons dari pesan "Forbidden"
+        String responseBody = response.data;
+        if (responseBody.startsWith('Forbidden')) {
+          responseBody = responseBody.replaceFirst('Forbidden', '').trim();
         }
 
-        // Buat objek LoginResponse dari data yang diurai
-        final loginResponse = LoginResponse.fromJson(responseData);
+        // Coba mengurai data JSON terlepas dari status code atau tipe respons
+        try {
+          // Pastikan responseBody adalah JSON yang valid
+          dynamic responseData;
+          if (responseBody is String) {
+            responseData = jsonDecode(responseBody);
+          } else {
+            responseData = responseBody;
+          }
 
-        // Jika status login adalah "Login successful", lanjutkan
-        if (loginResponse.message == "Login successful") {
-          return loginResponse;
-        } else {
-          displaySnackbar('Login gagal: ${loginResponse.message}');
+          // Buat objek LoginResponse dari data yang diurai
+          final loginResponse = LoginResponse.fromJson(responseData);
+
+          // Jika status login adalah "Login successful", lanjutkan
+          if (loginResponse.message == "Login successful") {
+            return loginResponse;
+          } else {
+            displaySnackbar('Login gagal: ${loginResponse.message}');
+            return null;
+          }
+        } catch (e) {
+          debugPrint('Error parsing JSON: $e');
+          displaySnackbar(
+              'Terjadi kesalahan saat mengurai respons dari server.');
           return null;
         }
-      } catch (e) {
-        debugPrint('Error parsing JSON: $e');
-        displaySnackbar('Terjadi kesalahan saat mengurai respons dari server.');
-        return null;
+      } else {
+        // Jika status code bukan 200 atau 403, lempar exception
+        throw Exception(
+            'Gagal melakukan login. Status Code: ${response.statusCode}');
       }
-    } else {
-      // Jika status code bukan 200 atau 403, lempar exception
-      throw Exception('Gagal melakukan login. Status Code: ${response.statusCode}');
+    } on DioException catch (e) {
+      debugPrint('DioException - Error: ${e.message}');
+      displaySnackbar('Terjadi kesalahan saat menghubungi server.');
+      return null;
+    } catch (e, stacktrace) {
+      debugPrint('Catch Error: $e');
+      debugPrint('Stack Trace: $stacktrace');
+      throw Exception('Terjadi kesalahan saat login');
     }
-  } on DioException catch (e) {
-    debugPrint('DioException - Error: ${e.message}');
-    displaySnackbar('Terjadi kesalahan saat menghubungi server.');
-    return null;
-  } catch (e, stacktrace) {
-    debugPrint('Catch Error: $e');
-    debugPrint('Stack Trace: $stacktrace');
-    throw Exception('Terjadi kesalahan saat login');
   }
-}
 
 // Fungsi untuk menampilkan SnackBar
   void displaySnackbar(String message) {
     debugPrint('Snackbar: $message');
     // Implementasikan SnackBar di UI (optional)
   }
+
+  Future<Menu?> getMenuById(String id) async {
+  try {
+    final response = await dio.get(
+      '$_baseUrl/menu/byid',
+      queryParameters: {'id': id},
+    );
+
+    // Cek status code
+    if (response.statusCode == 200 || response.statusCode == 403) {
+      // Bersihkan respons dari pesan "Forbidden"
+      String responseBody = response.data.toString();
+      if (responseBody.startsWith('Forbidden')) {
+        responseBody = responseBody.replaceFirst('Forbidden', '').trim();
+      }
+
+      // Pastikan responseBody adalah JSON yang valid
+      dynamic responseData;
+      try {
+        responseData = jsonDecode(responseBody);
+      } catch (e) {
+        throw Exception('Gagal mengurai JSON: $e');
+      }
+
+      // Debug: Cetak respons untuk memastikan data diterima dengan benar
+      debugPrint('Response Data: $responseData');
+
+      // Akses properti "data" di JSON
+      if (responseData != null &&
+          responseData is Map<String, dynamic> &&
+          responseData.containsKey('data')) {
+        final menuData = responseData['data'];
+        return Menu.fromJson(menuData);
+      } else {
+        throw Exception('Data tidak valid atau kosong.');
+      }
+    } else {
+      throw Exception(
+          'Gagal mengambil data menu. Status Code: ${response.statusCode}');
+    }
+  } catch (e) {
+    debugPrint('Error: $e');
+    return null;
+  }
+}
 }

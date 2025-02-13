@@ -24,6 +24,8 @@ class _MenuPageState extends State<MenuPage> {
   final _deskripsiCtl = TextEditingController();
   final _gambarCtl = TextEditingController();
   final _kategoriCtl = TextEditingController();
+  bool isEditing = false;
+  String idMenu = '';
 
   late SharedPreferences logindata;
   String username = '';
@@ -60,11 +62,7 @@ class _MenuPageState extends State<MenuPage> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        if (menuList != null) {
-          _menuList = menuList;
-        } else {
-          _errorMessage = 'Gagal memuat menu. Coba lagi nanti.';
-        }
+        _menuList = menuList ?? []; // Jika null, gunakan list kosong
       });
     } catch (e) {
       if (!mounted) return;
@@ -237,9 +235,32 @@ class _MenuPageState extends State<MenuPage> {
               ),
               const SizedBox(height: 24.0),
               Center(
-                child: ElevatedButton(
-                  onPressed: _postMenu,
-                  child: const Text('Tambah Menu'),
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: _postMenu,
+                      child: Text(isEditing ? 'Update Menu' : 'Post Menu Makanan'),
+                    ),
+                    if (isEditing) // Tampilkan tombol "Cancel Update" hanya jika sedang dalam mode edit
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        onPressed: () {
+                          // Reset form dan keluar dari mode edit
+                          _namamenuCtl.clear();
+                          _hargaCtl.clear();
+                          _deskripsiCtl.clear();
+                          _gambarCtl.clear();
+                          _kategoriCtl.clear();
+                          setState(() {
+                            isEditing = false; // Keluar dari mode edit
+                            idMenu = ''; // Reset ID menu
+                          });
+                        },
+                        child: const Text('Cancel Update'),
+                      ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24.0),
@@ -284,8 +305,23 @@ class _MenuPageState extends State<MenuPage> {
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.edit),
-                                      onPressed: () {
-                                        // Tambahkan fungsi edit menu
+                                      onPressed: () async {
+                                        final menu = await _dataService
+                                            .getMenuById(_menuList[index].id);
+                                        print(
+                                            'Data menu yang diterima: ${menu?.toJson()}'); // Log data
+                                        setState(() {
+                                          if (menu != null) {
+                                            _namamenuCtl.text = menu.namaMenu;
+                                            _hargaCtl.text =
+                                                menu.harga.toString();
+                                            _deskripsiCtl.text = menu.deskripsi;
+                                            _gambarCtl.text = menu.gambar;
+                                            _kategoriCtl.text = menu.kategori;
+                                            isEditing = true;
+                                            idMenu = menu.id;
+                                          }
+                                        });
                                       },
                                     ),
                                     IconButton(
