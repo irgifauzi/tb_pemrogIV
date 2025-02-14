@@ -80,7 +80,8 @@ class _MenuPageState extends State<MenuPage> {
     if (_formKey.currentState!.validate()) {
       final newMenu = MenuInput(
         namamenu: _namamenuCtl.text,
-        harga: int.parse(_hargaCtl.text), // Konversi ke int
+        harga: int.parse(_hargaCtl.text
+            .replaceAll(RegExp(r'[^0-9]'), '')), // Perbaikan di sini
         deskripsi: _deskripsiCtl.text,
         gambar: _gambarCtl.text,
         kategori: _kategoriCtl.text,
@@ -115,18 +116,17 @@ class _MenuPageState extends State<MenuPage> {
     if (_formKey.currentState!.validate()) {
       final updatedMenu = {
         "nama_menu": _namamenuCtl.text,
-        "harga": int.parse(_hargaCtl.text),
+        "harga": int.parse(_hargaCtl.text
+            .replaceAll(RegExp(r'[^0-9]'), '')), // Perbaikan di sini
         "deskripsi": _deskripsiCtl.text,
         "gambar": _gambarCtl.text,
         "kategori": _kategoriCtl.text,
       };
 
       try {
-        // Panggil updateMenuById dari ApiServices
         bool isSuccess = await _dataService.updateMenuById(idMenu, updatedMenu);
 
         if (isSuccess) {
-          // Berhasil update, refresh list dan reset form
           refreshMenuList();
           _namamenuCtl.clear();
           _hargaCtl.clear();
@@ -137,8 +137,6 @@ class _MenuPageState extends State<MenuPage> {
             isEditing = false;
             idMenu = '';
           });
-
-          // Notifikasi berhasil
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Menu berhasil diupdate!')),
           );
@@ -202,7 +200,7 @@ class _MenuPageState extends State<MenuPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Menu Restoran Jepang'),
+        title: const Text('Dashboard Admin Restoran'),
         actions: [
           IconButton(
             onPressed: () {
@@ -284,10 +282,27 @@ class _MenuPageState extends State<MenuPage> {
                   if (value == null || value.isEmpty) {
                     return 'Harga tidak boleh kosong';
                   }
-                  if (int.tryParse(value) == null) {
+                  if (int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), '')) ==
+                      null) {
                     return 'Harga harus berupa angka';
                   }
                   return null;
+                },
+                onChanged: (value) {
+                  // Format harga ke dalam bentuk Rupiah
+                  String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
+                  if (cleanedValue.isNotEmpty) {
+                    String formattedValue = NumberFormat.currency(
+                      locale: 'id_ID',
+                      symbol: 'Rp ',
+                      decimalDigits: 0,
+                    ).format(int.parse(cleanedValue));
+                    _hargaCtl.value = TextEditingValue(
+                      text: formattedValue,
+                      selection: TextSelection.collapsed(
+                          offset: formattedValue.length),
+                    );
+                  }
                 },
               ),
               const SizedBox(height: 16.0),
@@ -317,14 +332,30 @@ class _MenuPageState extends State<MenuPage> {
                   }
                   return null;
                 },
+                readOnly: false, // Pastikan ini diatur ke false agar bisa paste
+                enableInteractiveSelection:
+                    true, // Agar bisa pilih teks dan paste
               ),
               const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _kategoriCtl,
+              DropdownButtonFormField<String>(
+                value: (_kategoriCtl.text.isNotEmpty &&
+                        (_kategoriCtl.text == 'Makanan' ||
+                            _kategoriCtl.text == 'Minuman'))
+                    ? _kategoriCtl.text
+                    : null,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   labelText: 'Kategori',
                 ),
+                items: const [
+                  DropdownMenuItem(value: 'Makanan', child: Text('Makanan')),
+                  DropdownMenuItem(value: 'Minuman', child: Text('Minuman')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _kategoriCtl.text = value!;
+                  });
+                },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Kategori tidak boleh kosong';
@@ -370,73 +401,123 @@ class _MenuPageState extends State<MenuPage> {
                   ? const Center(child: CircularProgressIndicator())
                   : _errorMessage.isNotEmpty
                       ? Center(child: Text(_errorMessage))
-                      : ListView.builder(
+                      : GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2, // Jumlah kolom, bisa disesuaikan
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 0.8, // Atur proporsi card
+                          ),
                           itemCount: _menuList.length,
                           itemBuilder: (context, index) {
                             final menu = _menuList[index];
                             return Card(
-                              child: ListTile(
-                                leading: menu.gambar.isNotEmpty
-                                    ? Image.network(
-                                        menu.gambar,
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                          return const Icon(Icons.broken_image);
-                                        },
-                                      )
-                                    : const Icon(Icons.fastfood),
-                                title: Text(menu.namaMenu),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(menu.deskripsi),
-                                    Text(
-                                      'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp').format(menu.harga)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(10),
                                       ),
+                                      child: menu.gambar.isNotEmpty
+                                          ? Image.network(
+                                              menu.gambar,
+                                              fit: BoxFit.cover,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return const Icon(
+                                                    Icons.broken_image,
+                                                    size: 50);
+                                              },
+                                            )
+                                          : const Icon(Icons.fastfood,
+                                              size: 50),
                                     ),
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.edit),
-                                      onPressed: () async {
-                                        final menu = await _dataService
-                                            .getMenuById(_menuList[index].id);
-                                        print(
-                                            'Data menu yang diterima: ${menu?.toJson()}'); // Log data
-                                        setState(() {
-                                          if (menu != null) {
-                                            _namamenuCtl.text = menu.namaMenu;
-                                            _hargaCtl.text =
-                                                menu.harga.toString();
-                                            _deskripsiCtl.text = menu.deskripsi;
-                                            _gambarCtl.text = menu.gambar;
-                                            _kategoriCtl.text = menu.kategori;
-                                            isEditing = true;
-                                            idMenu = menu.id;
-                                          }
-                                        });
-                                      },
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          menu.namaMenu,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16.0,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4.0),
+                                        Text(
+                                          menu.deskripsi,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 14.0,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4.0),
+                                        Text(
+                                          'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp').format(menu.harga)}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.teal,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete),
-                                      onPressed: () {
-                                        _showDeleteConfirmationDialog(
-                                            _menuList[index].id,
-                                            _menuList[index].namaMenu);
-                                      },
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                  ButtonBar(
+                                    alignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit,
+                                            color: Colors.blue),
+                                        onPressed: () async {
+                                          final menu = await _dataService
+                                              .getMenuById(_menuList[index].id);
+                                          setState(() {
+                                            if (menu != null) {
+                                              _namamenuCtl.text = menu.namaMenu;
+                                              _hargaCtl
+                                                  .text = NumberFormat.currency(
+                                                locale: 'id_ID',
+                                                symbol: 'Rp ',
+                                                decimalDigits: 0,
+                                              ).format(menu
+                                                  .harga); // Perbaikan format Rupiah
+                                              _deskripsiCtl.text =
+                                                  menu.deskripsi;
+                                              _gambarCtl.text = menu.gambar;
+                                              _kategoriCtl.text = menu.kategori;
+                                              isEditing = true;
+                                              idMenu = menu.id;
+                                            }
+                                          });
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.red),
+                                        onPressed: () {
+                                          _showDeleteConfirmationDialog(
+                                              _menuList[index].id,
+                                              _menuList[index].namaMenu);
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             );
                           },

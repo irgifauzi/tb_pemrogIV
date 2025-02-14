@@ -4,6 +4,7 @@ import 'package:dio_contact/service/auth_manager.dart';
 import 'package:dio_contact/view/screen/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio_contact/view/screen/landing_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -73,105 +74,138 @@ class _LoginPageState extends State<LoginPage> {
         appBar: AppBar(
           title: const Text('Login Page'),
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: TextFormField(
-                      validator: _validateUsername,
-                      controller: _usernameController,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.account_circle_rounded),
-                        hintText: 'Write username here...',
-                        labelText: 'Username',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(10),
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextFormField(
+                          validator: _validateUsername,
+                          controller: _usernameController,
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.account_circle_rounded),
+                            hintText: 'Write username here...',
+                            labelText: 'Username',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
+                            ),
+                            fillColor: Color.fromARGB(255, 242, 254, 255),
+                            filled: true,
                           ),
                         ),
-                        fillColor: Color.fromARGB(255, 242, 254, 255),
-                        filled: true,
                       ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: TextFormField(
-                      obscureText: true,
-                      controller: _passwordController,
-                      validator: _validatePassword,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.password_rounded),
-                        hintText: 'Write your password here...',
-                        labelText: 'Password',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(10),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextFormField(
+                          obscureText: true,
+                          controller: _passwordController,
+                          validator: _validatePassword,
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.password_rounded),
+                            hintText: 'Write your password here...',
+                            labelText: 'Password',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
+                            ),
+                            fillColor: Color.fromARGB(255, 242, 254, 255),
+                            filled: true,
                           ),
                         ),
-                        fillColor: Color.fromARGB(255, 242, 254, 255),
-                        filled: true,
                       ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final isValidForm = _formKey.currentState!.validate();
-                        if (isValidForm) {
-                          final postModel = {
-                            "username": _usernameController.text,
-                            "password": _passwordController.text,
-                          };
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final isValidForm =
+                                _formKey.currentState!.validate();
+                            if (isValidForm) {
+                              final postModel = {
+                                "username": _usernameController.text,
+                                "password": _passwordController.text,
+                              };
 
-                          try {
-                            LoginResponse? res =
-                                await _dataService.login(postModel);
-                            debugPrint('Login Response: ${res?.toJson()}');
+                              try {
+                                LoginResponse? res =
+                                    await _dataService.login(postModel);
+                                debugPrint('Login Response: ${res?.toJson()}');
 
-                            if (res != null && res.statusCode == 200) {
-                              // Simpan token ke SharedPreferences
-                              SharedPreferences prefs =
-                                  await SharedPreferences.getInstance();
-                              await prefs.setString('token',
-                                  res.token ?? 'Token tidak ditemukan');
+                                if (res != null && res.statusCode == 200) {
+                                  SharedPreferences prefs =
+                                      await SharedPreferences.getInstance();
+                                  await prefs.setString('token',
+                                      res.token ?? 'Token tidak ditemukan');
 
-                              // Simpan username (opsional, jika diperlukan)
-                              await AuthManager.login(_usernameController.text);
+                                  await AuthManager.login(
+                                      _usernameController.text);
 
-                              // Navigasi ke MenuPage
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const MenuPage()),
-                                (route) => false,
-                              );
-                            } else {
-                              displaySnackbar(
-                                res?.message ??
-                                    'Login gagal. Periksa koneksi atau data yang dimasukkan.',
-                              );
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const MenuPage()),
+                                    (route) => false,
+                                  );
+                                } else {
+                                  displaySnackbar(
+                                    res?.message ??
+                                        'Login gagal. Periksa koneksi atau data yang dimasukkan.',
+                                  );
+                                }
+                              } catch (e) {
+                                debugPrint('Login Error: $e');
+                                displaySnackbar(
+                                    'Terjadi kesalahan saat login. Coba lagi nanti.');
+                              }
                             }
-                          } catch (e) {
-                            debugPrint('Login Error: $e');
-                            displaySnackbar(
-                                'Terjadi kesalahan saat login. Coba lagi nanti.');
-                          }
-                        }
-                      },
-                      child: const Text('Login'),
-                    ),
+                          },
+                          child: const Text('Login'),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 20), // Jarak dari bawah
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const LandingPage()),
+                      (route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  label: const Text(
+                    'Back to Landing Page',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey, // Warna tombol
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15, horizontal: 30),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25), // Sudut membulat
+                    ),
+                    elevation: 5, // Bayangan untuk efek tombol
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
