@@ -217,43 +217,29 @@ class ApiServices {
     }
   }
 
-Future<bool> deleteMenu(String id) async {
+  Future<bool> deleteMenu(String id) async {
   try {
     final url = '$_baseUrl/hapus/byid/$id';
-    final response = await Dio().delete(url);
+    final response = await Dio().delete(
+      url,
+      options: Options(
+        validateStatus: (status) {
+          return status == 200 || status == 403; // Terima 200 & 403 sebagai sukses
+        },
+      ),
+    );
 
-    // Cek status code
+    debugPrint('Response Status: ${response.statusCode}');
+    debugPrint('Response Data: ${response.data}');
+
     if (response.statusCode == 200 || response.statusCode == 403) {
-      // Bersihkan respons dari pesan "Forbidden"
-      String responseBody = response.data.toString();
-      if (responseBody.startsWith('Forbidden')) {
-        responseBody = responseBody.replaceFirst('Forbidden', '').trim();
-      }
-
-      // Pastikan responseBody adalah JSON yang valid
-      dynamic responseData;
-      try {
-        responseData = jsonDecode(responseBody);
-      } catch (e) {
-        throw Exception('Gagal mengurai JSON: $e');
-      }
-
-      // Debug: Cetak respons untuk memastikan data diterima dengan benar
-      debugPrint('Response Data: $responseData');
-
-      // Cek apakah respons berhasil
-      if (responseData != null && responseData is Map<String, dynamic>) {
-        return true; // Berhasil menghapus
-      } else {
-        throw Exception('Gagal menghapus menu. Data tidak valid.');
-      }
+      return true;
     } else {
-      throw Exception(
-          'Gagal menghapus menu. Status Code: ${response.statusCode}');
+      throw Exception('Gagal menghapus menu. Status Code: ${response.statusCode}');
     }
   } catch (e) {
     debugPrint('Error: $e');
-    return false; // Gagal menghapus
+    return false;
   }
 }
 
@@ -303,5 +289,3 @@ Future<bool> deleteMenu(String id) async {
     }
   }
 }
-
-

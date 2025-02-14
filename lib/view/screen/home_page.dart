@@ -172,7 +172,7 @@ class _MenuPageState extends State<MenuPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Konfirmasi Hapus'),
-          content: Text('Apakah Anda yakin ingin menghapus data $nama?'),
+          content: Text('Apakah Anda yakin ingin menghapus data $nama ?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -182,18 +182,11 @@ class _MenuPageState extends State<MenuPage> {
             ),
             TextButton(
               onPressed: () async {
-                bool isDeleted = await _dataService.deleteMenu(id);
-                if (isDeleted) {
-                  // Jika berhasil dihapus, refresh daftar menu
+                bool success = await _dataService.deleteMenu(id);
+                if (success) {
                   await refreshMenuList();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Menu berhasil dihapus!')),
-                  );
                 } else {
-                  // Jika gagal, tampilkan pesan error
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Gagal menghapus menu!')),
-                  );
+                  debugPrint('Gagal menghapus menu');
                 }
                 Navigator.of(context).pop();
               },
