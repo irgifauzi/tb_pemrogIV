@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dio_contact/view/login_page.dart'; // Import halaman login
+import 'package:dio_contact/view/screen/pesanan_page.dart'; // Import halaman pesanan
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -92,11 +94,17 @@ class _LandingPageState extends State<LandingPage>
                     ),
                   ),
                   const SizedBox(height: 30),
+                  // Tombol Pesan Ramen
                   ScaleTransition(
                     scale: _opacityAnimation,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, '/home_page');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PesananPage(),
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
@@ -107,7 +115,38 @@ class _LandingPageState extends State<LandingPage>
                         ),
                       ),
                       child: const Text(
-                        'Start',
+                        'Pesan Ramen',
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20), // Jarak antara tombol
+                  // Tombol Login Admin
+                  ScaleTransition(
+                    scale: _opacityAnimation,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginPage(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      child: const Text(
+                        'Login Admin',
                         style: TextStyle(
                           fontSize: 20,
                           color: Colors.white,
