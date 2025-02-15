@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:dio_contact/model/login_model.dart';
 import 'package:dio_contact/model/menu_model.dart';
+import 'package:dio_contact/model/pesanan_model.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
@@ -288,4 +289,75 @@ class ApiServices {
       return false;
     }
   }
+
+  Future<bool> tambahPesanan(Pesanan pesanan) async {
+  try {
+    final String fullUrl = '$_baseUrl/tambah/pesanan';
+    debugPrint('Request URL: $fullUrl');
+    debugPrint('Request Data: ${pesanan.toJson()}');
+
+    final response = await dio.post(
+      fullUrl,
+      data: pesanan.toJson(),
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json', // Only content-type header
+        },
+        validateStatus: (status) {
+          return status == 200 || status == 403; // Accept 200 and 403 as success
+        },
+      ),
+    );
+
+    debugPrint('Response Status Code: ${response.statusCode}');
+    debugPrint('Response Data: ${response.data}');
+
+    // Handle response
+    if (response.statusCode == 200 || response.statusCode == 403) {
+      // Clean up the response if it starts with "Forbidden"
+      String responseBody = response.data.toString();
+      if (responseBody.startsWith('Forbidden')) {
+        responseBody = responseBody.replaceFirst('Forbidden', '').trim();
+      }
+
+      // Parse the response body as JSON
+      dynamic responseData;
+      try {
+        responseData = jsonDecode(responseBody);
+      } catch (e) {
+        throw Exception('Gagal mengurai JSON: $e');
+      }
+
+      debugPrint('Parsed Response Data: $responseData');
+
+      // Check if the response data is valid
+      if (responseData != null && responseData is Map<String, dynamic>) {
+        // Check for success message
+        if (responseData['message'] == 'Pesanan berhasil ditambahkan') {
+          print('Pesanan berhasil ditambahkan!');
+          return true;
+        } else {
+          throw Exception('Gagal menambahkan pesanan: ${responseData['message']}');
+        }
+      } else {
+        throw Exception('Gagal menambahkan pesanan. Data tidak valid.');
+      }
+    } else {
+      throw Exception('Gagal menambahkan pesanan. Status Code: ${response.statusCode}');
+    }
+  } on DioException catch (e) {
+    debugPrint('DioException - Error: ${e.message}');
+    displaySnackbar('Terjadi kesalahan saat menghubungi server.');
+    return false;
+  } catch (e) {
+    debugPrint('Error: $e');
+    return false;
+  }
+}
+
+
+
+
+
+
 }
