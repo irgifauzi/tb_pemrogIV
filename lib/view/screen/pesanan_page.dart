@@ -207,6 +207,7 @@ class _PesananPageState extends State<PesananPage> {
     daftarMenu: daftarMenu,
     totalHarga: _totalHarga.toInt(),
     catatanPesanan: catatanPesanan,
+  
   );
 
   try {

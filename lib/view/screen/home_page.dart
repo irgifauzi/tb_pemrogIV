@@ -1,5 +1,8 @@
 import 'package:dio_contact/service/auth_manager.dart';
 import 'package:dio_contact/view/login_page.dart';
+import 'package:dio_contact/view/screen/pesananbaru.dart';
+import 'package:dio_contact/view/screen/pesanandiproses.dart';
+import 'package:dio_contact/view/screen/pesananhistory.dart';
 import 'package:dio_contact/view/screen/widget/menu_card.dart';
 import 'package:flutter/material.dart';
 import 'package:dio_contact/service/api_service.dart';
@@ -202,6 +205,51 @@ class _MenuPageState extends State<MenuPage> {
       appBar: AppBar(
         title: const Text('Dashboard Admin Restoran'),
         actions: [
+          // Dropdown/Burger Icon
+          PopupMenuButton<String>(
+            icon:
+                const Icon(Icons.more_vert), // Ikon burger atau titik vertikal
+            onSelected: (String value) {
+              // Handle the selection
+              if (value == 'pesanan_baru') {
+                // Navigate to Pesanan Baru Page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => pesananbaruPage()),
+                );
+              } else if (value == 'pesanan_diproses') {
+                // Navigate to Pesanan Diproses Page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => pesanandiprosesPage()),
+                );
+              } else if (value == 'history') {
+                // Navigate to History Page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => pesananhistoryPage()),
+                );
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem<String>(
+                  value: 'pesanan_baru',
+                  child: Text('Pesanan Baru'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'pesanan_diproses',
+                  child: Text('Pesanan Diproses'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'history',
+                  child: Text('History'),
+                ),
+              ];
+            },
+          ),
+          // Logout Icon
           IconButton(
             onPressed: () {
               _showLogoutConfirmationDialog(context);

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:dio_contact/model/login_model.dart';
 import 'package:dio_contact/model/menu_model.dart';
 import 'package:dio_contact/model/pesanan_model.dart';
+import 'package:dio_contact/model/pesananbaru_model.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
@@ -43,6 +44,47 @@ class ApiServices {
         if (responseData.containsKey('data')) {
           final List data = responseData['data'];
           return data.map((item) => Menu.fromJson(item)).toList();
+        } else {
+          throw Exception('Data tidak ditemukan dalam respons.');
+        }
+      } else {
+        throw Exception(
+            'Gagal mengambil data. Status Code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+      throw Exception('Terjadi kesalahan saat mengambil data');
+    }
+  }
+
+  Future<List<PesananbaruModel>> fetchDataPesanan(String status) async {
+    try {
+      final String fullUrl = '$_baseUrl/data/bystatus/flutter?status=$status';
+      final response = await dio.get(fullUrl);
+
+      if (response.statusCode == 200 || response.statusCode == 403) {
+        print(
+            'Response success (status ${response.statusCode}): Data berhasil diambil.');
+        print('Response body: ${response.data}');
+
+        // Bersihkan respons dari pesan "Forbidden"
+        String responseBody = response.data;
+        if (responseBody.startsWith('Forbidden')) {
+          responseBody = responseBody.replaceFirst('Forbidden', '').trim();
+        }
+
+        // Pastikan responseBody adalah JSON yang valid
+        dynamic responseData;
+        try {
+          responseData = jsonDecode(responseBody);
+        } catch (e) {
+          throw Exception('Gagal mengurai JSON: $e');
+        }
+
+        // Akses properti 'data'
+        if (responseData.containsKey('data')) {
+          final List data = responseData['data'];
+          return data.map((item) => PesananbaruModel.fromJson(item)).toList();
         } else {
           throw Exception('Data tidak ditemukan dalam respons.');
         }
@@ -219,31 +261,32 @@ class ApiServices {
   }
 
   Future<bool> deleteMenu(String id) async {
-  try {
-    final url = '$_baseUrl/hapus/byid/$id';
-    final response = await Dio().delete(
-      url,
-      options: Options(
-        validateStatus: (status) {
-          return status == 200 || status == 403; // Terima 200 & 403 sebagai sukses
-        },
-      ),
-    );
+    try {
+      final url = '$_baseUrl/hapus/byid/$id';
+      final response = await Dio().delete(
+        url,
+        options: Options(
+          validateStatus: (status) {
+            return status == 200 ||
+                status == 403; // Terima 200 & 403 sebagai sukses
+          },
+        ),
+      );
 
-    debugPrint('Response Status: ${response.statusCode}');
-    debugPrint('Response Data: ${response.data}');
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Data: ${response.data}');
 
-    if (response.statusCode == 200 || response.statusCode == 403) {
-      return true;
-    } else {
-      throw Exception('Gagal menghapus menu. Status Code: ${response.statusCode}');
+      if (response.statusCode == 200 || response.statusCode == 403) {
+        return true;
+      } else {
+        throw Exception(
+            'Gagal menghapus menu. Status Code: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error: $e');
+      return false;
     }
-  } catch (e) {
-    debugPrint('Error: $e');
-    return false;
   }
-}
-
 
   Future<bool> updateMenuById(String id, Map<String, dynamic> menuData) async {
     try {
@@ -291,73 +334,121 @@ class ApiServices {
   }
 
   Future<bool> tambahPesanan(Pesanan pesanan) async {
-  try {
-    final String fullUrl = '$_baseUrl/tambah/pesanan';
-    debugPrint('Request URL: $fullUrl');
-    debugPrint('Request Data: ${pesanan.toJson()}');
+    try {
+      final String fullUrl = '$_baseUrl/tambah/pesanan';
+      debugPrint('Request URL: $fullUrl');
+      debugPrint('Request Data: ${pesanan.toJson()}');
 
-    final response = await dio.post(
+      final response = await dio.post(
+        fullUrl,
+        data: pesanan.toJson(),
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json', // Only content-type header
+          },
+          validateStatus: (status) {
+            return status == 200 ||
+                status == 403; // Accept 200 and 403 as success
+          },
+        ),
+      );
+
+      debugPrint('Response Status Code: ${response.statusCode}');
+      debugPrint('Response Data: ${response.data}');
+
+      // Handle response
+      if (response.statusCode == 200 || response.statusCode == 403) {
+        // Clean up the response if it starts with "Forbidden"
+        String responseBody = response.data.toString();
+        if (responseBody.startsWith('Forbidden')) {
+          responseBody = responseBody.replaceFirst('Forbidden', '').trim();
+        }
+
+        // Parse the response body as JSON
+        dynamic responseData;
+        try {
+          responseData = jsonDecode(responseBody);
+        } catch (e) {
+          throw Exception('Gagal mengurai JSON: $e');
+        }
+
+        debugPrint('Parsed Response Data: $responseData');
+
+        // Check if the response data is valid
+        if (responseData != null && responseData is Map<String, dynamic>) {
+          // Check for success message
+          if (responseData['message'] == 'Pesanan berhasil ditambahkan') {
+            print('Pesanan berhasil ditambahkan!');
+            return true;
+          } else {
+            throw Exception(
+                'Gagal menambahkan pesanan: ${responseData['message']}');
+          }
+        } else {
+          throw Exception('Gagal menambahkan pesanan. Data tidak valid.');
+        }
+      } else {
+        throw Exception(
+            'Gagal menambahkan pesanan. Status Code: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      debugPrint('DioException - Error: ${e.message}');
+      displaySnackbar('Terjadi kesalahan saat menghubungi server.');
+      return false;
+    } catch (e) {
+      debugPrint('Error: $e');
+      return false;
+    }
+  }
+
+ Future<void> updateStatusPesanan(String id, String newStatus) async {
+  try {
+    final String fullUrl = '$_baseUrl/update/status?id=$id';
+
+    final response = await dio.patch(
       fullUrl,
-      data: pesanan.toJson(),
+      data: {
+        'status_pesanan': newStatus, // Sesuaikan dengan key yang diharapkan backend
+      },
       options: Options(
         headers: {
-          'Content-Type': 'application/json', // Only content-type header
-        },
-        validateStatus: (status) {
-          return status == 200 || status == 403; // Accept 200 and 403 as success
+          'Content-Type': 'application/json', // Tetap sertakan Content-Type
         },
       ),
     );
 
-    debugPrint('Response Status Code: ${response.statusCode}');
-    debugPrint('Response Data: ${response.data}');
-
-    // Handle response
-    if (response.statusCode == 200 || response.statusCode == 403) {
-      // Clean up the response if it starts with "Forbidden"
-      String responseBody = response.data.toString();
-      if (responseBody.startsWith('Forbidden')) {
-        responseBody = responseBody.replaceFirst('Forbidden', '').trim();
-      }
-
-      // Parse the response body as JSON
-      dynamic responseData;
-      try {
-        responseData = jsonDecode(responseBody);
-      } catch (e) {
-        throw Exception('Gagal mengurai JSON: $e');
-      }
-
-      debugPrint('Parsed Response Data: $responseData');
-
-      // Check if the response data is valid
-      if (responseData != null && responseData is Map<String, dynamic>) {
-        // Check for success message
-        if (responseData['message'] == 'Pesanan berhasil ditambahkan') {
-          print('Pesanan berhasil ditambahkan!');
-          return true;
-        } else {
-          throw Exception('Gagal menambahkan pesanan: ${responseData['message']}');
-        }
-      } else {
-        throw Exception('Gagal menambahkan pesanan. Data tidak valid.');
-      }
-    } else {
-      throw Exception('Gagal menambahkan pesanan. Status Code: ${response.statusCode}');
+    // Handle respons null
+    if (response.data == null) {
+      print('Status pesanan berhasil diupdate (respons null).');
+      return;
     }
-  } on DioException catch (e) {
-    debugPrint('DioException - Error: ${e.message}');
-    displaySnackbar('Terjadi kesalahan saat menghubungi server.');
-    return false;
+
+    // Bersihkan respons dari pesan "Forbidden" jika ada
+    String responseBody = response.data.toString(); // Pastikan responseBody adalah String
+    if (responseBody.startsWith('Forbidden')) {
+      responseBody = responseBody.replaceFirst('Forbidden', '').trim();
+    }
+
+    // Pastikan responseBody adalah JSON yang valid
+    dynamic responseData;
+    try {
+      responseData = jsonDecode(responseBody);
+    } catch (e) {
+      // Jika parsing gagal, anggap sebagai update berhasil
+      print('Status pesanan berhasil diupdate (respons tidak valid).');
+      return;
+    }
+
+    // Cek status code
+    if (response.statusCode == 200) {
+      print('Status pesanan berhasil diupdate.');
+      print('Response: $responseData');
+    } else {
+      throw Exception('Gagal mengupdate status pesanan. Status Code: ${response.statusCode}');
+    }
   } catch (e) {
-    debugPrint('Error: $e');
-    return false;
+    print('Error: $e');
+    throw Exception('Terjadi kesalahan saat mengupdate status pesanan: $e');
   }
 }
-
-
-
-
-
-
 }
