@@ -13,12 +13,17 @@ class Pesanan {
     required this.catatanPesanan,
   });
 
-  // Convert Pesanan object to JSON
   Map<String, dynamic> toJson() {
     return {
       'nama_pelanggan': namaPelanggan,
       'nomor_meja': nomorMeja,
-      'daftar_menu': daftarMenu,
+      'daftar_menu': daftarMenu.map((item) => {
+        'menu_id': item['menu_id'], // Pastikan menu_id dikirim
+        'nama_menu': item['nama_menu'],
+        'jumlah': item['jumlah'],
+        'harga_satuan': item['harga_satuan'], // Pastikan harga_satuan dikirim
+        'subtotal': item['subtotal'], // Pastikan subtotal dikirim
+      }).toList(),
       'total_harga': totalHarga,
       'catatan_pesanan': catatanPesanan,
     };

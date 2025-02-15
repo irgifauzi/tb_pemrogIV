@@ -181,61 +181,79 @@ class _PesananPageState extends State<PesananPage> {
                 TextButton(
                   child: const Text('Konfirmasi Pesanan'),
                   onPressed: () async {
-  final namaPelanggan = _namaPelangganController.text;
-  final catatanPesanan = _catatanPesananController.text;
+                    final namaPelanggan = _namaPelangganController.text;
+                    final catatanPesanan = _catatanPesananController.text;
 
-  if (namaPelanggan.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Nama pelanggan harus diisi')),
-    );
-    return;
-  }
+                    if (namaPelanggan.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Nama pelanggan harus diisi')),
+                      );
+                      return;
+                    }
 
-  // Ubah data dari _cart menjadi daftar menu untuk model Pesanan
-  List<Map<String, dynamic>> daftarMenu = _cart.entries.map((entry) {
-    return {
-      'nama_menu': entry.key.namaMenu,
-      'jumlah': entry.value,
-      'harga': entry.key.harga,
-    };
-  }).toList();
+                    // Ubah data dari _cart menjadi daftar menu untuk model Pesanan
+                    List<Map<String, dynamic>> daftarMenu =
+                        _cart.entries.map((entry) {
+                      return {
+                        'id': entry.key.id,
+                        'nama_menu': entry.key.namaMenu,
+                        'jumlah': entry.value,
+                        'harga': entry.key.harga,
+                      };
+                    }).toList();
 
-  // Buat objek Pesanan
-  final pesanan = Pesanan(
-    namaPelanggan: namaPelanggan,
-    nomorMeja: _selectedSeat,
-    daftarMenu: daftarMenu,
-    totalHarga: _totalHarga.toInt(),
-    catatanPesanan: catatanPesanan,
-  
-  );
+                    // Buat objek Pesanan
+                    // Buat objek Pesanan
+                    // Buat objek Pesanan
+                    final pesanan = Pesanan(
+                      namaPelanggan: namaPelanggan,
+                      nomorMeja: _selectedSeat,
+                      daftarMenu: _cart.entries.map((entry) {
+                        return {
+                          'menu_id': entry.key.id, // Pastikan menu_id diambil
+                          'nama_menu': entry.key.namaMenu,
+                          'jumlah': entry.value,
+                          'harga_satuan':
+                              entry.key.harga, // Ambil harga dari menu
+                          'subtotal':
+                              entry.key.harga * entry.value, // Hitung subtotal
+                        };
+                      }).toList(),
+                      totalHarga: _totalHarga.toInt(),
+                      catatanPesanan: catatanPesanan,
+                    );
 
-  try {
-    // Panggil fungsi tambahPesanan dari ApiServices
-    await _dataService.tambahPesanan(pesanan);
+// Print data sebelum dikirim
+                    print('Data yang dikirim: ${pesanan.toJson()}');
 
-    // Berhasil ditambahkan, tampilkan pesan sukses
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pesanan berhasil ditambahkan')),
-    );
+                    try {
+                      // Panggil fungsi tambahPesanan dari ApiServices
+                      await _dataService.tambahPesanan(pesanan);
 
-    // Kosongkan keranjang dan field input
-    setState(() {
-      _cart.clear();
-      _totalHarga = 0.0;
-      _namaPelangganController.clear();
-      _catatanPesananController.clear();
-    });
+                      // Berhasil ditambahkan, tampilkan pesan sukses
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Pesanan berhasil ditambahkan')),
+                      );
 
-    Navigator.of(context).pop();
-  } catch (e) {
-    // Tampilkan pesan error jika gagal
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Gagal menambahkan pesanan: $e')),
-    );
-  }
-},
+                      // Kosongkan keranjang dan field input
+                      setState(() {
+                        _cart.clear();
+                        _totalHarga = 0.0;
+                        _namaPelangganController.clear();
+                        _catatanPesananController.clear();
+                      });
 
+                      Navigator.of(context).pop();
+                    } catch (e) {
+                      // Tampilkan pesan error jika gagal
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Gagal menambahkan pesanan: $e')),
+                      );
+                    }
+                  },
                 ),
               ],
             );

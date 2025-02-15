@@ -5,8 +5,8 @@ class PesananbaruModel {
   final List<Map<String, dynamic>> daftarMenu;
   final int totalHarga;
   final String catatanPesanan;
-  final String statusPesanan; // Sesuaikan dengan key di JSON
-  final DateTime tanggalPesanan; // Sesuaikan dengan key di JSON
+  final String statusPesanan; 
+  final DateTime tanggalPesanan; 
   final String pembayaran;
 
   PesananbaruModel({
