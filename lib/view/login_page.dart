@@ -18,7 +18,6 @@ class _LoginPageState extends State<LoginPage> {
 
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _tokenController = TextEditingController();
 
   final ApiServices _dataService = ApiServices();
 
@@ -32,7 +31,6 @@ class _LoginPageState extends State<LoginPage> {
     bool isLoggedIn = await AuthManager.isLoggedIn();
     if (isLoggedIn) {
       Navigator.pushAndRemoveUntil(
-// ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(
           builder: (context) => const MenuPage(),
@@ -46,7 +44,6 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
-    _tokenController.dispose();
     super.dispose();
   }
 
@@ -71,60 +68,80 @@ class _LoginPageState extends State<LoginPage> {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Login Page'),
-        ),
-        body: Stack(
-          children: [
-            SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextFormField(
+        backgroundColor: const Color(0xFFFFF8E1), // Warna latar selaras dengan LandingPage
+        body: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo Ramen
+                  Image.asset(
+                    'assets/ramen.png',
+                    width: 150, // Sesuaikan ukuran logo
+                    height: 150,
+                  ),
+                  const SizedBox(height: 20),
+                  // Judul Halaman
+                  Text(
+                    'Admin Login',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.brown[800],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Deskripsi
+                  Text(
+                    'Masukkan username dan password untuk masuk',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.brown[600],
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 30),
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        // Input Username
+                        TextFormField(
                           validator: _validateUsername,
                           controller: _usernameController,
-                          decoration: const InputDecoration(
-                            prefixIcon: Icon(Icons.account_circle_rounded),
-                            hintText: 'Write username here...',
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.account_circle_rounded),
+                            hintText: 'Username',
                             labelText: 'Username',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(10),
-                              ),
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                            fillColor: Color.fromARGB(255, 242, 254, 255),
+                            fillColor: Colors.white,
                             filled: true,
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextFormField(
+                        const SizedBox(height: 20),
+                        // Input Password
+                        TextFormField(
                           obscureText: true,
                           controller: _passwordController,
                           validator: _validatePassword,
-                          decoration: const InputDecoration(
-                            prefixIcon: Icon(Icons.password_rounded),
-                            hintText: 'Write your password here...',
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.lock_rounded),
+                            hintText: 'Password',
                             labelText: 'Password',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(10),
-                              ),
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                            fillColor: Color.fromARGB(255, 242, 254, 255),
+                            fillColor: Colors.white,
                             filled: true,
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ElevatedButton(
+                        const SizedBox(height: 30),
+                        // Tombol Login
+                        ElevatedButton(
                           onPressed: () async {
                             final isValidForm =
                                 _formKey.currentState!.validate();
@@ -137,7 +154,6 @@ class _LoginPageState extends State<LoginPage> {
                               try {
                                 LoginResponse? res =
                                     await _dataService.login(postModel);
-                                debugPrint('Login Response: ${res?.toJson()}');
 
                                 if (res != null && res.statusCode == 200) {
                                   SharedPreferences prefs =
@@ -161,51 +177,54 @@ class _LoginPageState extends State<LoginPage> {
                                   );
                                 }
                               } catch (e) {
-                                debugPrint('Login Error: $e');
                                 displaySnackbar(
                                     'Terjadi kesalahan saat login. Coba lagi nanti.');
                               }
                             }
                           },
-                          child: const Text('Login'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: const Text(
+                            'Login',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 20), // Jarak dari bawah
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const LandingPage()),
-                      (route) => false,
-                    );
-                  },
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  label: const Text(
-                    'Back to Landing Page',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey, // Warna tombol
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 15, horizontal: 30),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25), // Sudut membulat
+                      ],
                     ),
-                    elevation: 5, // Bayangan untuk efek tombol
                   ),
-                ),
+                  const SizedBox(height: 20),
+                  // Tombol Kembali ke Landing Page
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LandingPage()),
+                        (route) => false,
+                      );
+                    },
+                    child: const Text(
+                      'Back to Landing Page',
+                      style: TextStyle(
+                        color: Colors.blueGrey,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

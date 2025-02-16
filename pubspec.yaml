@@ -24,3 +24,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/logoramen.png
+    - assets/ramen.png
+    - assets/jul.jpg
+    - assets/irgi.jpg

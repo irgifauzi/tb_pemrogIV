@@ -17,10 +17,8 @@ class _PesananPageState extends State<PesananPage> {
   bool _isLoading = true;
   String _errorMessage = '';
   int _selectedSeat = 1;
-  final TextEditingController _namaPelangganController =
-      TextEditingController();
-  final TextEditingController _catatanPesananController =
-      TextEditingController();
+  final TextEditingController _namaPelangganController = TextEditingController();
+  final TextEditingController _catatanPesananController = TextEditingController();
   double _totalHarga = 0.0;
   Map<Menu, int> _cart = {}; // Menyimpan item dan jumlah dalam keranjang
   String _selectedCategory = 'Semua';
@@ -91,25 +89,20 @@ class _PesananPageState extends State<PesananPage> {
                             Expanded(
                               child: Text(
                                 '${entry.key.namaMenu} (x${entry.value})',
-                                overflow: TextOverflow
-                                    .ellipsis, // Tambahkan ini agar teks panjang dipotong
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            Text(NumberFormat.currency(
-                                    locale: 'id_ID', symbol: 'Rp')
+                            Text(NumberFormat.currency(locale: 'id_ID', symbol: 'Rp')
                                 .format(entry.key.harga * entry.value)),
                             Row(
-                              mainAxisSize: MainAxisSize
-                                  .min, // Tambahkan ini agar tidak melebar ke kanan
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.remove,
-                                      color: Colors.blue),
+                                  icon: const Icon(Icons.remove, color: Colors.blue),
                                   onPressed: () {
                                     setState(() {
                                       if (_cart[entry.key]! > 1) {
-                                        _cart[entry.key] =
-                                            _cart[entry.key]! - 1;
+                                        _cart[entry.key] = _cart[entry.key]! - 1;
                                       } else {
                                         _cart.remove(entry.key);
                                       }
@@ -118,8 +111,7 @@ class _PesananPageState extends State<PesananPage> {
                                   },
                                 ),
                                 IconButton(
-                                  icon:
-                                      const Icon(Icons.add, color: Colors.blue),
+                                  icon: const Icon(Icons.add, color: Colors.blue),
                                   onPressed: () {
                                     setState(() {
                                       _cart[entry.key] = _cart[entry.key]! + 1;
@@ -128,8 +120,7 @@ class _PesananPageState extends State<PesananPage> {
                                   },
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete,
-                                      color: Colors.red),
+                                  icon: const Icon(Icons.delete, color: Colors.red),
                                   onPressed: () {
                                     setState(() {
                                       _cart.remove(entry.key);
@@ -198,15 +189,12 @@ class _PesananPageState extends State<PesananPage> {
 
                     if (namaPelanggan.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Nama pelanggan harus diisi')),
+                        const SnackBar(content: Text('Nama pelanggan harus diisi')),
                       );
                       return;
                     }
 
-                    // Ubah data dari _cart menjadi daftar menu untuk model Pesanan
-                    List<Map<String, dynamic>> daftarMenu =
-                        _cart.entries.map((entry) {
+                    List<Map<String, dynamic>> daftarMenu = _cart.entries.map((entry) {
                       return {
                         'id': entry.key.id,
                         'nama_menu': entry.key.namaMenu,
@@ -220,33 +208,24 @@ class _PesananPageState extends State<PesananPage> {
                       nomorMeja: _selectedSeat,
                       daftarMenu: _cart.entries.map((entry) {
                         return {
-                          'menu_id': entry.key.id, // Pastikan menu_id diambil
+                          'menu_id': entry.key.id,
                           'nama_menu': entry.key.namaMenu,
                           'jumlah': entry.value,
-                          'harga_satuan':
-                              entry.key.harga, // Ambil harga dari menu
-                          'subtotal':
-                              entry.key.harga * entry.value, // Hitung subtotal
+                          'harga_satuan': entry.key.harga,
+                          'subtotal': entry.key.harga * entry.value,
                         };
                       }).toList(),
                       totalHarga: _totalHarga.toInt(),
                       catatanPesanan: catatanPesanan,
                     );
 
-// Print data sebelum dikirim
-                    print('Data yang dikirim: ${pesanan.toJson()}');
-
                     try {
-                      // Panggil fungsi tambahPesanan dari ApiServices
                       await _dataService.tambahPesanan(pesanan);
 
-                      // Berhasil ditambahkan, tampilkan pesan sukses
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Pesanan berhasil ditambahkan')),
+                        const SnackBar(content: Text('Pesanan berhasil ditambahkan')),
                       );
 
-                      // Kosongkan keranjang dan field input
                       setState(() {
                         _cart.clear();
                         _totalHarga = 0.0;
@@ -256,10 +235,8 @@ class _PesananPageState extends State<PesananPage> {
 
                       Navigator.of(context).pop();
                     } catch (e) {
-                      // Tampilkan pesan error jika gagal
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Gagal menambahkan pesanan: $e')),
+                        SnackBar(content: Text('Gagal menambahkan pesanan: $e')),
                       );
                     }
                   },
@@ -275,8 +252,10 @@ class _PesananPageState extends State<PesananPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF8E1), // Warna latar selaras dengan LoginPage
       appBar: AppBar(
         title: const Text('Daftar Menu'),
+        backgroundColor: Colors.brown[800], // Warna AppBar selaras dengan LoginPage
         actions: [
           IconButton(
             icon: const Icon(Icons.shopping_cart),
@@ -288,6 +267,13 @@ class _PesananPageState extends State<PesananPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // Logo Ramen
+            Image.asset(
+              'assets/ramen.png',
+              width: 150,
+              height: 150,
+            ),
+            const SizedBox(height: 20),
             // Dropdown untuk memilih kategori
             DropdownButton<String>(
               value: _selectedCategory,
@@ -310,18 +296,15 @@ class _PesananPageState extends State<PesananPage> {
                     ? Center(child: Text(_errorMessage))
                     : Expanded(
                         child: GridView.builder(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
                             childAspectRatio: 0.75,
                           ),
-                          itemCount: getFilteredMenu()
-                              .length, // Gunakan menu yang sudah difilter
+                          itemCount: getFilteredMenu().length,
                           itemBuilder: (context, index) {
-                            final menu = getFilteredMenu()[
-                                index]; // Ambil menu yang sudah difilter
+                            final menu = getFilteredMenu()[index];
 
                             return Card(
                               elevation: 4,
@@ -343,8 +326,7 @@ class _PesananPageState extends State<PesananPage> {
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           menu.namaMenu,
@@ -353,8 +335,7 @@ class _PesananPageState extends State<PesananPage> {
                                             fontSize: 16,
                                           ),
                                           maxLines: 1,
-                                          overflow: TextOverflow
-                                              .ellipsis, // Hindari teks terlalu panjang
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
@@ -374,17 +355,15 @@ class _PesananPageState extends State<PesananPage> {
                                     child: ElevatedButton(
                                       onPressed: () {
                                         setState(() {
-                                          _cart.update(
-                                              menu, (value) => value + 1,
+                                          _cart.update(menu, (value) => value + 1,
                                               ifAbsent: () => 1);
                                           _updateTotalHarga();
                                         });
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
+                                        backgroundColor: Colors.redAccent, // Warna tombol selaras dengan LoginPage
                                         shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                       ),
                                       child: const Text(
