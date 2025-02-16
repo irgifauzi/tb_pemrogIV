@@ -23,6 +23,8 @@ class _PesananPageState extends State<PesananPage> {
       TextEditingController();
   double _totalHarga = 0.0;
   Map<Menu, int> _cart = {}; // Menyimpan item dan jumlah dalam keranjang
+  String _selectedCategory = 'Semua';
+  final List<String> _categories = ['Semua', 'Makanan', 'Minuman'];
 
   @override
   void initState() {
@@ -49,6 +51,16 @@ class _PesananPageState extends State<PesananPage> {
         _isLoading = false;
         _errorMessage = 'Terjadi kesalahan: $e';
       });
+    }
+  }
+
+  List<Menu> getFilteredMenu() {
+    if (_selectedCategory == 'Semua') {
+      return _menuList; // Tampilkan semua menu
+    } else {
+      return _menuList
+          .where((menu) => menu.kategori == _selectedCategory)
+          .toList(); // Filter berdasarkan kategori
     }
   }
 
@@ -203,9 +215,6 @@ class _PesananPageState extends State<PesananPage> {
                       };
                     }).toList();
 
-                    // Buat objek Pesanan
-                    // Buat objek Pesanan
-                    // Buat objek Pesanan
                     final pesanan = Pesanan(
                       namaPelanggan: namaPelanggan,
                       nomorMeja: _selectedSeat,
@@ -279,7 +288,22 @@ class _PesananPageState extends State<PesananPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const SizedBox(height: 24.0),
+            // Dropdown untuk memilih kategori
+            DropdownButton<String>(
+              value: _selectedCategory,
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedCategory = newValue!;
+                });
+              },
+              items: _categories.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16.0),
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _errorMessage.isNotEmpty
@@ -293,9 +317,12 @@ class _PesananPageState extends State<PesananPage> {
                             mainAxisSpacing: 10,
                             childAspectRatio: 0.75,
                           ),
-                          itemCount: _menuList.length,
+                          itemCount: getFilteredMenu()
+                              .length, // Gunakan menu yang sudah difilter
                           itemBuilder: (context, index) {
-                            final menu = _menuList[index];
+                            final menu = getFilteredMenu()[
+                                index]; // Ambil menu yang sudah difilter
+
                             return Card(
                               elevation: 4,
                               shape: RoundedRectangleBorder(
@@ -305,9 +332,12 @@ class _PesananPageState extends State<PesananPage> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Expanded(
-                                    child: Image.network(
-                                      menu.gambar,
-                                      fit: BoxFit.cover,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.network(
+                                        menu.gambar,
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                   Padding(
@@ -316,30 +346,59 @@ class _PesananPageState extends State<PesananPage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(menu.namaMenu,
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.bold)),
                                         Text(
-                                            'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp').format(menu.harga)}'),
+                                          menu.namaMenu,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow
+                                              .ellipsis, // Hindari teks terlalu panjang
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Harga: ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp').format(menu.harga)}',
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Kategori: ${menu.kategori}',
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
                                       ],
                                     ),
                                   ),
-                                  ElevatedButton(
-                                    child: const Text('Tambah ke Keranjang'),
-                                    onPressed: () {
-                                      setState(() {
-                                        _cart.update(menu, (value) => value + 1,
-                                            ifAbsent: () => 1);
-                                        _updateTotalHarga();
-                                      });
-                                    },
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _cart.update(
+                                              menu, (value) => value + 1,
+                                              ifAbsent: () => 1);
+                                          _updateTotalHarga();
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Tambah ke Keranjang',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                             );
                           },
                         ),
-                      ),
+                      )
           ],
         ),
       ),
