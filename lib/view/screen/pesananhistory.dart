@@ -79,7 +79,7 @@ class _pesananhistoryPageState extends State<pesananhistoryPage> {
                                 ),
                                 ...pesanan.daftarMenu.map((menu) {
                                   return Text(
-                                    '- ${menu['nama_menu']} (Rp${menu['harga_satuan'] ?? menu['subtotal'] ?? 0})',
+                                    '- ${menu['nama_menu']} (${menu['jumlah']} x Rp${menu['harga_satuan'] ?? menu['subtotal'] ?? 0})',
                                   );
                                 }).toList(),
                                 SizedBox(height: 8),
