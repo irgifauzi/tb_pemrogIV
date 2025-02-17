@@ -9,6 +9,7 @@ import 'package:dio_contact/service/api_service.dart';
 import 'package:dio_contact/model/menu_model.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -37,6 +38,9 @@ class _MenuPageState extends State<MenuPage> {
 
   late SharedPreferences tokenData;
   String token = '';
+
+  // Tambahkan variabel untuk menampilkan pesan sukses
+  String? _successMessage;
 
   @override
   void initState() {
@@ -92,23 +96,28 @@ class _MenuPageState extends State<MenuPage> {
         final response = await _dataService.postMenu(newMenu);
         setState(() {
           ctRes = response;
+          _successMessage = 'Menu berhasil ditambahkan!';
         });
+
+        // Hilangkan pesan sukses setelah 3 detik
+        Timer(const Duration(seconds: 3), () {
+          if (mounted) {
+            setState(() {
+              _successMessage = null;
+            });
+          }
+        });
+
         refreshMenuList();
         _namamenuCtl.clear();
         _hargaCtl.clear();
         _deskripsiCtl.clear();
         _gambarCtl.clear();
         _kategoriCtl.clear();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Menu berhasil ditambahkan!')),
-        );
       } catch (e) {
         setState(() {
           _errorMessage = 'Gagal menambahkan menu: $e';
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menambahkan menu: $e')),
-        );
       }
     }
   }
@@ -127,6 +136,19 @@ class _MenuPageState extends State<MenuPage> {
         bool isSuccess = await _dataService.updateMenuById(idMenu, updatedMenu);
 
         if (isSuccess) {
+          setState(() {
+            _successMessage = 'Menu berhasil diupdate!';
+          });
+
+          // Hilangkan pesan sukses setelah 3 detik
+          Timer(const Duration(seconds: 3), () {
+            if (mounted) {
+              setState(() {
+                _successMessage = null;
+              });
+            }
+          });
+
           refreshMenuList();
           _namamenuCtl.clear();
           _hargaCtl.clear();
@@ -137,9 +159,6 @@ class _MenuPageState extends State<MenuPage> {
             isEditing = false;
             idMenu = '';
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Menu berhasil diupdate!')),
-          );
         } else {
           throw Exception('Update gagal, coba lagi.');
         }
@@ -149,19 +168,6 @@ class _MenuPageState extends State<MenuPage> {
         });
       }
     }
-  }
-
-  Widget hasilCard(BuildContext context) {
-    return Column(
-      children: [
-        if (ctRes != null)
-          MenuCard(
-            ctRes: ctRes!,
-          )
-        else
-          const SizedBox.shrink(),
-      ],
-    );
   }
 
   void _showDeleteConfirmationDialog(String id, String nama) {
@@ -182,6 +188,19 @@ class _MenuPageState extends State<MenuPage> {
               onPressed: () async {
                 bool success = await _dataService.deleteMenu(id);
                 if (success) {
+                  setState(() {
+                    _successMessage = 'Menu berhasil dihapus!';
+                  });
+
+                  // Hilangkan pesan sukses setelah 3 detik
+                  Timer(const Duration(seconds: 3), () {
+                    if (mounted) {
+                      setState(() {
+                        _successMessage = null;
+                      });
+                    }
+                  });
+
                   await refreshMenuList();
                 } else {
                   debugPrint('Gagal menghapus menu');
@@ -199,12 +218,17 @@ class _MenuPageState extends State<MenuPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFFFF8E1), // Warna latar selaras dengan LoginPage
+      backgroundColor: const Color(0xFFFFF8E1),
       appBar: AppBar(
         title: const Text('Dashboard Admin Restoran'),
-        backgroundColor: Colors.brown[800], // Warna appbar selaras dengan tema
+        backgroundColor: Colors.brown[800],
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              refreshMenuList();
+            },
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (String value) {
@@ -255,6 +279,60 @@ class _MenuPageState extends State<MenuPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // Card untuk menampilkan username dan token
+            Card(
+              color: Colors.brown[100],
+              elevation: 4,
+              margin: const EdgeInsets.symmetric(vertical: 10.0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Username: $username',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Token: ${token.length > 20 ? token.substring(0, 20) : token}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Card untuk menampilkan pesan sukses
+            if (_successMessage != null)
+              Card(
+                color: Colors.green[100],
+                elevation: 4,
+                margin: const EdgeInsets.symmetric(vertical: 10.0),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Text(
+                        _successMessage!,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
             // Logo Ramen
             Image.asset(
               'assets/ramen.png',
@@ -262,6 +340,7 @@ class _MenuPageState extends State<MenuPage> {
               height: 150,
             ),
             const SizedBox(height: 20),
+
             // Card untuk Form
             Card(
               elevation: 4,
@@ -416,6 +495,7 @@ class _MenuPageState extends State<MenuPage> {
               ),
             ),
             const SizedBox(height: 20),
+
             // Daftar Menu
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
